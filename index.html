@@ -1,13 +1,46 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<html lang="es"> <!-- Cambiado a español -->
+
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- Iconos y Manifest -->
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+  <link rel="shortcut icon" href="/img/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+
+  <!-- Viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Theme Color (para la barra de UI del navegador/OS) -->
+  <meta name="theme-color" content="#1e90ff"> <!-- Debe coincidir con manifest.json -->
+
+  <!-- iOS Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <!-- o 'default', 'black' -->
+  <link rel="apple-touch-icon" href="/img/icon-192.png"> <!-- Icono para pantalla de inicio iOS -->
+  <!-- Puedes añadir más apple-touch-icon para diferentes resoluciones si quieres -->
+
+  <!-- Título -->
+  <title>Order App</title>
+
+  <!-- Descripción (bueno para SEO aunque sea PWA) -->
+  <meta name="description" content="Gestión de pedidos offline">
+
+  <!-- Vite manejará la inyección del CSS aquí si no se importa en JS -->
+
+</head>
+
+<body>
+  <div id="app">
+    <!-- Vue se montará aquí -->
+    <!-- Opcional: Puedes poner un simple loader aquí que Vue reemplazará -->
+    <!-- <div style="text-align: center; padding-top: 50px;">Cargando aplicación...</div> -->
+  </div>
+  <!-- El script de main.js (procesado por Vite) se inyectará aquí por Vite -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>

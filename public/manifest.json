@@ -3,19 +3,23 @@
     "short_name": "OrderApp",
     "description": "Gestión de pedidos offline",
     "start_url": "/",
-    "display": "standalone",
+    "scope": "/",
+    "display": "standalone", 
     "background_color": "#ffffff",
-    "theme_color": "#1e90ff",
+    "theme_color": "#1e90ff", 
+    "orientation": "any",
     "icons": [
         {
-            "src": "/img/icon-192.png",
+            "src": "/img/android-chrome-192x192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-            "src": "/img/icon-512.png",
+            "src": "/img/android-chrome-512x512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         }
     ]
 }
