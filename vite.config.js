@@ -6,6 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa' // <-- 1. Importar
 
 // https://vite.dev/config/
 export default defineConfig({
+  // base: "/order-app/",
   plugins: [
     vue(),
     tailwindcss(),
