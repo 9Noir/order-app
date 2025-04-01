@@ -212,13 +212,12 @@ onMounted(() => {
     <h2>
         {{ isModeAdd ? 'AGREGAR CLIENTE' : `EDITAR CLIENTE` }}
     </h2>
-    <form @submit.prevent="addClient" class="flex flex-col gap-2 p-2 border rounded">
+    <form @submit.prevent="addClient">
         <input type="text" v-model="nombre" placeholder="Nombre *" required />
         <input type="text" v-model="pasillo" placeholder="Pasillo" />
         <input type="number" v-model="local" placeholder="Local" />
-        <div class="flex gap-2 mt-2">
-            <button type="submit" class="flex-1 btn disabled:opacity-60 disabled:cursor-not-allowed "
-                :disabled="!nombre.trim() || isLoading">
+        <div class="grid gap-2 mt-2">
+            <button type="submit" :disabled="!nombre.trim() || isLoading">
                 <span v-if="!isLoading">{{ isModeAdd ? 'Agregar' : 'Guardar Cambios' }}</span>
                 <span v-else>Guardando...</span>
             </button>
@@ -239,7 +238,7 @@ onMounted(() => {
 
         <div v-if="!isLoading && clients.length > 0">
             <div class="flex justify-between items-center my-2">
-                <h4 class="text-md font-semibold opacity-50">Ordenar por:</h4>
+                <h4 class="text-sm font-semibold opacity-50 truncate break-words">Ordenar:</h4>
                 <div class="flex text-xs gap-2">
                     <button @click="sortClients('createdAt')" type="button"
                         :class="{ 'font-extrabold': currentSortField === 'createdAt' }">
@@ -259,30 +258,30 @@ onMounted(() => {
                     </button>
                 </div>
             </div>
-            <div class="flex flex-col px-2 pt-2 border rounded shadow-sm ">
-                <div class="grid pb-2 gap-1 grid-cols-12  opacity-50 text-sm">
+
+            <section>
+                <div>
                     <span class="col-span-1">Pas.</span>
                     <span class="col-span-1">Loc.</span>
-                    <span class="col-span-8">Nombre</span>
+                    <span class="col-span-6">Nombre</span>
                     <span class="col-span-2 text-center">Acciones</span>
                 </div>
                 <!-- Lista de Clientes -->
-                <div class="grid gap-1 grid-cols-12 items-center border-t" v-for="client in clients" :key="client.id">
-                    <span class="col-span-1 text-sm font-mono text-center">{{ client.pasillo }}</span>
-                    <span class="col-span-1 text-sm font-mono text-center">{{ client.local }}</span>
-                    <span class="col-span-7 text-sm md:text-base break-words">{{ client.nombre }}</span>
-                    <div class="col-span-3 flex justify-end gap-1">
-                        <button type="button" @click="editClient(client)" aria-label="Editar cliente" class=""
-                            :disabled="isLoading">
-                            E
-                        </button>
-                        <button type="button" @click="deleteClient(client)" aria-label="Eliminar cliente" class=""
-                            :disabled="isLoading">
-                            X
-                        </button>
-                    </div>
+                <div v-for="client in clients" :key="client.id">
+                    <span class="col-span-1">{{ client.pasillo }}</span>
+                    <span class="col-span-1">{{ client.local }}</span>
+                    <span class="col-span-6 break-words">{{ client.nombre }}</span>
+                    <button type="button" @click="editClient(client)" aria-label="Editar cliente" class=""
+                        :disabled="isLoading">
+                        E
+                    </button>
+                    <button type="button" @click="deleteClient(client)" aria-label="Eliminar cliente" class=""
+                        :disabled="isLoading">
+                        X
+                    </button>
                 </div>
-            </div>
+            </section>
+
         </div>
     </div>
 </template>

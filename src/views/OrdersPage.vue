@@ -3,10 +3,11 @@ import { computed, reactive, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import dbPromise from '../services/db';
 
-const order = reactive({ id: null, status: '', client_id: '', client_name: '', product_name: '', total_amount: '', notes: '', payment_method: '', payment_date: null, created_at: null, updated_at: null, is_active: true });
+const order = reactive({ id: null, status: '', clientId: '', clientName: '', productId: '', productName: '', quantity: 1, totalAmount: '', notes: '', paymentMethod: '', paymentDate: null, createdAt: null, updatedAt: null, estimatedDeliveryDate: null, deliveryDate: null, isActive: true });
 const orders = reactive([]);
 const clients = reactive([]);
 const products = reactive([]);
+
 
 onMounted(() => {
     loadData();
@@ -14,13 +15,7 @@ onMounted(() => {
 });
 
 function editOrder(orderData) {
-    order.id = orderData.id;
-    order.status = orderData.status;
-    order.client_id = orderData.client_id;
-    order.client_name = orderData.client_name;
-    order.product_name = orderData.product_name;
-    order.total_amount = orderData.total_amount;
-    order.notes = orderData.notes;
+    Object.assign(order, orderData);
 }
 
 async function setOrder() {
@@ -29,17 +24,8 @@ async function setOrder() {
     const store = tx.objectStore('orders');
     const orderData = {
         id: order.id || uuidv4(),
-        status: order.status || 'Pendiente',
-        client_id: order.client_id || '',
-        client_name: order.client_name || '',
-        product_name: order.product_name || '',
-        total_amount: order.total_amount || 0,
-        notes: order.notes || '',
-        payment_method: order.payment_method || '',
-        payment_date: order.payment_date || null,
-        created_at: order.created_at || new Date(),
-        updated_at: new Date(),
-        is_active: order.is_active
+        createdAt: order.createdAt || new Date(),
+        updatedAt: new Date(),
     };
 
     if (order.id) {
@@ -48,36 +34,28 @@ async function setOrder() {
         await store.add(orderData);
     }
 
-    await tx.oncomplete;
+    await tx.done;
     resetForm();
-    loadOrders();
+    // loadOrders();
 }
 
 function resetForm() {
-    product.id = null;
-    product.nombre = '';
-    product.precio = '';
-    product.createdAt = null;
-    product.active = true;
+    // product.id = null;
+    // product.nombre = '';
+    // product.precio = '';
+    // product.createdAt = null;
+    // product.active = true;
 }
+
 async function loadData() {
     const db = await dbPromise();
-    const tx = db.transaction('clients', 'readonly');
-    const store = tx.objectStore('clients');
-    const tx2 = db.transaction('products', 'readonly');
-    const store2 = tx2.objectStore('products');
-    clients.length = 0;
-    clients.push(...await store.getAll());
-    products.length = 0;
-    products.push(...await store2.getAll());
+    Object.assign(clients, await db.transaction('clients', 'readonly').objectStore('clients').getAll());
+    Object.assign(products, await db.transaction('products', 'readonly').objectStore('products').getAll());
 }
 
 async function loadOrders() {
     const db = await dbPromise();
-    const tx = db.transaction('orders', 'readonly');
-    const store = tx.objectStore('orders');
-    orders.length = 0;
-    orders.push(...await store.getAll());
+    Object.assign(orders, await db.transaction('orders', 'readonly').objectStore('orders').getAll());
 }
 
 
@@ -86,9 +64,22 @@ async function loadOrders() {
     <h2>TOMAR PEDIDOS</h2>
     <section>
         <div v-if="clients?.length" v-for="client in clients" :key="client.id">
-            <span>{{ client.pasillo }}-{{ client.local }}</span>
-            <span>{{ client.name }}</span>
+            <span class="col-span-1">{{ client.pasillo }}-{{ client.local }}</span>
+            <span class="col-span-2">{{ client.nombre }}</span>
+            <span class="col-span-3 truncate">{{ products[0].nombre }}</span>
+            <div class="grid grid-cols-4 col-span-3">
+                <button type="button" @click="order.quantity--">-</button>
+                <input class="quantityInput col-span-2 text-center" type="number" v-model="order.quantity" min="1" placeholder="1" required>
+                <button type="button" @click="order.quantity++">+</button>
+            </div>
+            <span class="col-span-1">$ {{ products[0].precio * order.quantity }}</span>
+            <div class="grid grid-cols-3 col-span-10 gap-1 text-xs [button]:bg-gray-800">
+                <button class="bg-gray-400" type="button" @click="">ENCARGAR</button>
+                <button type="button" @click="">CERRADO</button>
+                <button type="button" @click="">CANCELAR</button>
+            </div>
         </div>
+        <div class="text-center italic opacity-50" v-if="clients?.length === 0">No hay clientes. Añade un cliente.</div>
     </section>
     <!--     <form class="grid gap-2" @submit.prevent="setOrder">
         <input type="text" v-model="order.status" placeholder="Status" required>
