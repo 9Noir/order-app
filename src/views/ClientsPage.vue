@@ -232,9 +232,9 @@ onMounted(() => {
 
         <div v-if="isLoading" class="text-center">Cargando clientes...</div>
 
-        <div v-if="!isLoading && clients.length === 0" class="text-center  italic">
+        <h3 v-if="!isLoading && clients.length === 0">
             No hay clientes registrados. ¡Agrega el primero!
-        </div>
+        </h3>
 
         <div v-if="!isLoading && clients.length > 0">
             <div class="flex justify-between items-center my-2">
