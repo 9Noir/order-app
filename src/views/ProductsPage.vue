@@ -1,9 +1,8 @@
 <script setup>
 import { computed, reactive, onMounted } from 'vue';
-import { v4 as uuidv4 } from 'uuid';
-import dbPromise from '../services/db';
+import { getAll, saveObject, deleteObject } from '../services/databaseService';
 
-const product = reactive({ id: null, nombre: '', precio: '', createdAt: null, isActive: true });
+const product = reactive({});
 const products = reactive([]);
 
 const activeProducts = computed(() => products.filter(p => p.isActive));
@@ -12,6 +11,7 @@ const sortedProducts = computed(() => [...activeProducts.value].sort((a, b) => b
 
 onMounted(() => {
     loadProducts();
+    resetForm();
 });
 
 function editProduct(productData) {
@@ -19,55 +19,42 @@ function editProduct(productData) {
 }
 
 async function setProduct(productToSave = product, isActive = true) {
-    const db = await dbPromise();
-    const tx = db.transaction('products', 'readwrite');
-    const store = tx.objectStore('products');
-    const productData = {
-        id: productToSave.id || uuidv4(),
-        nombre: productToSave.nombre.trim() || 'Producto',
-        precio: productToSave.precio || 0,
-        createdAt: productToSave.createdAt || new Date(),
-        updatedAt: new Date(),
-        isActive: isActive
-    };
+    Object.assign(productToSave, { isActive });
+    const productData = await saveObject(productToSave, 'products');
 
     if (productToSave.id) {
-        await store.put(productData);
         Object.assign(products.find(p => p.id === productData.id), productData);
     } else {
-        await store.add(productData);
         products.push(productData);
-
     }
-
-    await tx.done;
     resetForm();
+}
+
+function deleteProduct(productId) {
+    deleteObject(productId, 'products');
+    products.splice(products.findIndex(p => p.id === productId), 1);
 }
 
 function resetForm() {
     product.id = null;
-    product.nombre = '';
-    product.precio = '';
+    product.name = '';
+    product.price = '';
     product.createdAt = null;
     product.isActive = true;
 }
 
 async function loadProducts() {
-    const db = await dbPromise();
-    const tx = db.transaction('products', 'readonly');
-    const store = tx.objectStore('products');
     products.length = 0;
-    products.push(...await store.getAll());
+    products.push(...await getAll('products'));
 }
-
 </script>
 <template>
     <h2>AGREGAR PRODUCTOS</h2>
-    <form @submit.prevent="setProduct()">
-        <input type="text" v-model="product.nombre" placeholder="Nombre" required>
-        <input type="number" v-model="product.precio" placeholder="Precio" required>
+    <form v-if="'name' in product" @submit.prevent="setProduct()">
+        <input type="text" v-model="product.name" placeholder="Nombre" required>
+        <input type="number" v-model="product.price" placeholder="Precio" required>
         <div class="grid gap-2 mt-2">
-            <button type="submit" :disabled="!product.nombre.trim()">
+            <button type="submit" :disabled="!product.name.trim()">
                 {{ !product.id ? 'Agregar' : 'Guardar Cambios' }}
             </button>
             <button class="bg-gray-800" v-if="product.id" type="button" @click="resetForm">
@@ -78,32 +65,42 @@ async function loadProducts() {
     </form>
 
     <h2>PRODUCTOS</h2>
-    <section>
+    <h3 v-if="!sortedProducts?.length">No hay productos activos</h3>
+    <section v-if="sortedProducts?.length">
         <div>
             <span class="col-span-2">$</span>
             <span class="col-span-6">Nombre</span>
             <span class="col-span-2 text-center">Acciones</span>
         </div>
         <div v-if="sortedProducts?.length" v-for="product in sortedProducts" :key="product.id">
-            <span class="col-span-2">{{ product.precio }}</span>
-            <span class="col-span-6">{{ product.nombre }}</span>
-            <button type="button" @click="editProduct(product)">✎</button>
-            <button type="button" @click="setProduct(product, false)">╳</button>
+            <span class="col-span-2">{{ product.price }}</span>
+            <span class="col-span-3 truncate">{{ product.name }}</span>
+            <div class="grid grid-cols-3 col-span-5">
+                <button type="button" @click="editProduct(product)">✎</button>
+                <button type="button" @click="setProduct(product, false)">╳</button>
+                <button type="button" @click="deleteProduct(product.id)">╳</button>
+            </div>
+
         </div>
     </section>
 
     <h2>INACTIVOS</h2>
-    <section>
+    <h3 v-if="!inactiveProducts?.length">No hay productos inactivos</h3>
+    <section v-if="inactiveProducts?.length">
         <div>
             <span class="col-span-2">$</span>
-            <span class="col-span-6">Nombre</span>
+            <span class="col-span-4">Nombre</span>
             <span class="col-span-2 text-center">Acciones</span>
         </div>
         <div class="" v-if="inactiveProducts?.length" v-for="product in inactiveProducts" :key="product.id">
-            <span class="col-span-2">{{ product.precio }}</span>
-            <span class="col-span-6">{{ product.nombre }}</span>
-            <button type="button" @click="editProduct(product)">✎</button>
-            <button type="button" @click="setProduct(product, true)">✓</button>
+            <span class="col-span-2">{{ product.price }}</span>
+            <span class="col-span-3 truncate">{{ product.name }}</span>
+            <div class="grid grid-cols-3 col-span-5">
+                <button type="button" @click="editProduct(product)">✎</button>
+                <button type="button" @click="setProduct(product, true)">✓</button>
+                <button type="button" @click="deleteProduct(product.id)">╳</button>
+            </div>
+
         </div>
     </section>
 

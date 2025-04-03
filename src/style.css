@@ -34,8 +34,9 @@ form {
     appearance: textfield;
 }
 
+select,
 input {
-    @apply border rounded p-2 border-gray-50/40
+    @apply text-gray-50 bg-black border rounded p-2 border-gray-50/40
 }
 
 section>div:nth-of-type(1) {
