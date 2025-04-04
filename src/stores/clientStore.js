@@ -1,11 +1,27 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import databaseService from '../services/databaseService'; // Abstracted DB logic (See point 2)
+import { ref, reactive } from 'vue';
+import { getAll, saveObject, deleteObject } from '../services/databaseService'; // Abstracted DB logic (See point 2)
 
 export const useClientStore = defineStore('clients', () => {
-    const clients = ref([]);
+    const clients = reactive([]);
+    const currentClient = ref(null);
+    const sortBy = reactive({ field: 'updatedAt', direction: 1 });
     const isLoading = ref(false);
     const error = ref(null);
+
+    const sortedClients = computed(() => {
+        return [...clients]?.sort((a, b) => {
+            const valA = a[sortField.value] ?? '';
+            const valB = b[sortField.value] ?? '';
+
+            if (sortField.value === 'address' || sortField.value === 'name') {
+                return sortDirection.value * String(valA).localeCompare(String(valB));
+            }
+            else {
+                return sortDirection.value * (Number(valA) - Number(valB));
+            }
+        });
+    });
 
     async function fetchClients() {
         isLoading.value = true;

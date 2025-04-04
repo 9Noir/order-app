@@ -6,6 +6,7 @@ async function dbPromise() {
             db.createObjectStore('clients', { keyPath: 'id' });
             db.createObjectStore('products', { keyPath: 'id' });
             db.createObjectStore('orders', { keyPath: 'id' });
+            db.createObjectStore('draftOrders', { keyPath: 'id' });
         },
     });
 }

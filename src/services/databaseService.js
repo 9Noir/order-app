@@ -18,7 +18,10 @@ function normalizeObject(objectData, storeName) {
     }
 
     if (storeName === 'orders') {
-        return newObjectData
+        return {
+            ...newObjectData,
+            status: newObjectData.status || 'confirmed',
+        }
     }
 }
 
@@ -30,7 +33,6 @@ async function getStore(storeName, mode = 'readonly') {
 }
 
 export async function saveObject(objectData, storeName) {
-    console.log('Guardando objeto: ', objectData, storeName);
     if (objectData.id) {
         return await updateObject(objectData, storeName);
     } else {
@@ -39,12 +41,10 @@ export async function saveObject(objectData, storeName) {
 }
 
 export async function addObject(objectData, storeName) {
-    console.log('Agregando objeto: ', objectData, storeName);
     const { store, tx } = await getStore(storeName, 'readwrite');
     const objectToAdd = normalizeObject(objectData, storeName);
     await store.add(objectToAdd);
     await tx.done;
-    console.log('Objeto agregado: ', objectToAdd);
     return objectToAdd;
 }
 

@@ -41,6 +41,7 @@ function resetForm() {
     product.price = '';
     product.createdAt = null;
     product.isActive = true;
+    document.querySelector('input[autofocus]')?.focus();
 }
 
 async function loadProducts() {
@@ -51,7 +52,7 @@ async function loadProducts() {
 <template>
     <h2>AGREGAR PRODUCTOS</h2>
     <form v-if="'name' in product" @submit.prevent="setProduct()">
-        <input type="text" v-model="product.name" placeholder="Nombre" required>
+        <input autofocus type="text" v-model="product.name" placeholder="Nombre" required>
         <input type="number" v-model="product.price" placeholder="Precio" required>
         <div class="grid gap-2 mt-2">
             <button type="submit" :disabled="!product.name.trim()">
