@@ -1,41 +1,125 @@
 <script setup>
+import {computed} from 'vue';
+
+const props = defineProps({
+    orders: {
+        type: Array,
+        required: true
+    },
+    products: {
+        type: Array,
+        required: true
+    }
+})
+
+function getTotal(order) {
+    order.totalAmount = order.products.reduce((acc, product) => acc + product.price * product.quantity, 0);
+    return order.totalAmount;
+}
+
+function updateProductOfDraftOrder(product, productId) {
+    const productToUpdate = products.find(p => p.id === productId);
+    if (productToUpdate) {
+        product.id = productToUpdate.id
+        product.name = productToUpdate.name;
+        product.price = productToUpdate.price;
+        product.quantity = 1;
+    }
+}
+
+
+const getAvailableProducts = (order, currentProductId = '') => computed(() => {
+    const selectedIds = order.products?.filter(product => product.id !== currentProductId).map(product => product.id);
+    return props.products.filter(product => !selectedIds?.includes(product.id));
+})
+
+function increaseProductQuantity(product) {
+    product.quantity++;
+}
+
+// function quantityOnChange(product, draftOrder, productIndex) {
+//     if (product.quantity > 1) product.quantity--;
+//     else removeProductOfDraftOrder(draftOrder, productIndex);
+// }
+
+function decreaseProductQuantity(product, draftOrder, productIndex) {
+    if (product.quantity > 1) product.quantity--;
+    else removeProductOfDraftOrder(draftOrder, productIndex);
+}
+
+function removeProductOfDraftOrder(draftOrder, productIndex) {
+    draftOrder.products.splice(productIndex, 1);
+    getAvailableProducts(draftOrder);
+}
+
+function addProduct(order) {
+    const availableProducts = getAvailableProducts(order).value;
+    if (availableProducts.length > 0) addProductToDraftOrder(availableProducts[0], order.products);
+}
+
+async function setOrder(orderToSave, status) {
+    orderToSave.status = status;
+    // const orderData = { ...toRaw(orderToSave), status };
+
+
+    // if (orderToSave.status === 'pending') {
+    //     removeFromArray(draftOrders, orderToSave);
+    // }
+    // } else if (orderToSave.status === 'skipped') {
+    //     removeFromArray(skippedOrders, orderToSave);
+    // } else if (orderToSave.status === 'declined') {
+    //     removeFromArray(declinedOrders, orderToSave);
+    // }
+
+    // if (status === 'confirmed') {
+    //     //Ordenes confirmadas, se eliminan de los borradores
+    //     await saveObject(orderData, 'orders');
+    // } else if (status === 'skipped') {
+    //     //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
+    //     skippedOrders.push(orderData)
+    // } else if (status === 'declined') {
+    //     //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
+    //     declinedOrders.push(orderData)
+    // }
+}
+
 
 </script>
 <template>
-    <div class="bg-white/20 p-2 rounded-lg" v-if="draftOrders?.length && products?.length"
-        v-for="draftOrder in draftOrders" :key="draftOrder.id">
-        <span class="col-span-10 font-bold bg-gray-700 p-2">{{ draftOrder.location }} {{ draftOrder.clientName
-        }}</span>
-        <div class="grid col-span-10" v-for="(item, productIndex) in draftOrder.items" :key="item.id">
+    <div @click="getTotal(order)" class="bg-white/20 p-2 rounded-lg" v-if="orders?.length" v-for="order in props.orders"
+        :key="order.id">
+        <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ order.deliveryAddress }} {{
+            order.clientName
+            }}</span>
+        <div class="grid col-span-10" v-for="(product, productIndex) in order.products" :key="product.id + order.id">
             <div class="grid items-center grid-cols-10 col-span-10">
-                <select v-if="item.id" class="text-center py-2 uppercase truncate col-span-8"
-                    @change="updateItem(item, $event.target.value)" name="" id="" v-model="item.id">
-                    <option v-for="product in getAvailableProducts(draftOrder, item.id).value" :key="product.id"
-                        :value="product.id">{{
-                            product.nombre }}
+                <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"
+                    @change="updateProductOfDraftOrder(product, $event.target.value)" name="" id="">
+                    <option v-for="product in getAvailableProducts(order, product.id).value"
+                        :key="product.id + order.id" :value="product.id">{{
+                            product.name }}
                     </option>
                 </select>
-                <span class="col-span-2 text-center">$ {{ item.price * item.quantity }}</span>
+                <span class="col-span-2 text-center">$ {{ product.price * product.quantity }}</span>
             </div>
-
-
             <div class="grid items-center grid-cols-10 col-span-10">
-                <button class="col-span-2" type="button" @click="item.quantity--">-</button>
-                <input class="quantityInput col-span-3 text-center" type="number" v-model="item.quantity" min="1"
+                <button class="col-span-2" type="button"
+                    @click="decreaseProductQuantity(product, order, productIndex)">-</button>
+                <input class="quantityInput col-span-3 text-center" type="number" v-model="product.quantity" min="1"
                     placeholder="1" required>
-                <button class="col-span-2" type="button" @click="item.quantity++">+</button>
-                <button class="col-span-3" type="button" @click="removeProduct(draftOrder, productIndex)">🗑</button>
+                <button class="col-span-2" type="button" @click="increaseProductQuantity(product)">+</button>
+                <button class="col-span-3" type="button"
+                    @click="removeProductOfDraftOrder(order, productIndex)">🗑</button>
             </div>
         </div>
-        <button class="col-span-10" v-if="products.length > 1" type="button" @click="addProduct(draftOrder)">AGREGAR
+        <button class="col-span-10" v-if="getAvailableProducts(order).value.length > 0" type="button"
+            @click="addProduct(order)">AGREGAR
             PRODUCTO</button>
-
-
-        <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ getTotal(draftOrder).value }}</h2>
+        <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ order.totalAmount }}</h2>
         <div class="grid grid-cols-3 col-span-10 gap-1 text-xs">
-            <button class="bg-gray-500" type="button" @click="">ENCARGAR</button>
-            <button type="button" @click="">CERRADO</button>
-            <button type="button" @click="">CANCELAR</button>
+            <button class="bg-gray-500" type="button" @click="setOrder(draftOrder, 'confirmed')">CONFIRMAR</button>
+            <button type="button" @click="setOrder(draftOrder, 'skipped')">POSPONER</button>
+            <button type="button" @click="setOrder(draftOrder, 'declined')">CANCELAR</button>
         </div>
     </div>
 </template>

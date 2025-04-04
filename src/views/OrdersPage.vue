@@ -6,23 +6,32 @@ import ClientsPage from './ClientsPage.vue';
 const defaultProduct = ref(null);
 const order = reactive({ id: null, orderNumber: '', status: '', clientId: '', clientName: '', deliveryAddress: '', products: null, totalAmount: '', notes: '', paymentMethod: '', paymentDate: null, createdAt: null, updatedAt: null, expectedDeliveryDate: null, deliveryDate: null, isActive: true });
 const orders = reactive([]);
-const draftOrders = reactive([]);
-const skippedOrders = reactive([]);
-const declinedOrders = reactive([]);
+// const draftOrders = reactive([]);
+const draftOrders = computed(() => orders.filter(order => order.status === 'pending'));
+// const skippedOrders = reactive([]);
+// const declinedOrders = reactive([]);
+const skippedOrders = computed(() => orders.filter(order => order.status === 'skipped'));
+const declinedOrders = computed(() => orders.filter(order => order.status === 'declined'));
+const confirmedOrders = computed(() => orders.filter(order => order.status === 'confirmed'));
+const deliveredOrders = computed(() => orders.filter(order => order.status === 'delivered'));
+const paidOrders = computed(() => orders.filter(order => order.status === 'paid'));
 
 const clients = reactive([]);
 var products = reactive([]);
 const today = new Date().toISOString().slice(0, 10);
 var orderSequence = 1;
 
-const getTotal = (draftOrder) => computed(() => {
-    draftOrder.totalAmount = draftOrder.products.reduce((acc, product) => acc + product.price * product.quantity, 0);
-    return draftOrder.totalAmount;
-})
 
-const getAvailableProducts = (draftOrder, currentProductId = '') => computed(() => {
-    const selectedIds = draftOrder.products.filter(product => product.id !== currentProductId).map(product => product.id);
-    return products.filter(product => !selectedIds.includes(product.id));
+function getTotal(order) {
+    console.log("total");
+    order.totalAmount = order.products.reduce((acc, product) => acc + product.price * product.quantity, 0);
+    return order.totalAmount;
+}
+
+
+const getAvailableProducts = (order, currentProductId = '') => computed(() => {
+    const selectedIds = order.products?.filter(product => product.id !== currentProductId).map(product => product.id);
+    return products.filter(product => !selectedIds?.includes(product.id));
 })
 
 onMounted(async () => {
@@ -35,9 +44,9 @@ function selectDefaultProduct(productId) {
 }
 
 async function createDraftOrders() {
-    draftOrders.length = 0;
+    orders.length = 0;
     products?.length && clients.forEach(client => {
-        draftOrders.push({
+        orders.push({
             status: 'pending',
             clientId: client.id,
             clientName: client.name,
@@ -45,7 +54,7 @@ async function createDraftOrders() {
             products: addProductToDraftOrder(defaultProduct.value, []),
         });
     });
-    draftOrders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
+    orders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
 }
 
 function generateOrderNumber(prefix = 'ORD') {
@@ -59,31 +68,34 @@ function removeFromArray(array, orderToSave) {
 }
 
 async function setOrder(orderToSave, status) {
-    const orderData = { ...toRaw(orderToSave), status };
+    orderToSave.status = status;
+    // const orderData = { ...toRaw(orderToSave), status };
 
 
-    if (orderToSave.status === 'pending') {
-        removeFromArray(draftOrders, orderToSave);
-    } else if (orderToSave.status === 'skipped') {
-        removeFromArray(skippedOrders, orderToSave);
-    } else if (orderToSave.status === 'declined') {
-        removeFromArray(declinedOrders, orderToSave);
-    }
+    // if (orderToSave.status === 'pending') {
+    //     removeFromArray(draftOrders, orderToSave);
+    // }
+    // } else if (orderToSave.status === 'skipped') {
+    //     removeFromArray(skippedOrders, orderToSave);
+    // } else if (orderToSave.status === 'declined') {
+    //     removeFromArray(declinedOrders, orderToSave);
+    // }
 
-    if (status === 'confirmed') {
-        //Ordenes confirmadas, se eliminan de los borradores
-        await saveObject(orderData, 'orders');
-    } else if (status === 'skipped') {
-        //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
-        skippedOrders.push(orderData)
-    } else if (status === 'declined') {
-        //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
-        declinedOrders.push(orderData)
-    }
+    // if (status === 'confirmed') {
+    //     //Ordenes confirmadas, se eliminan de los borradores
+    //     await saveObject(orderData, 'orders');
+    // } else if (status === 'skipped') {
+    //     //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
+    //     skippedOrders.push(orderData)
+    // } else if (status === 'declined') {
+    //     //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
+    //     declinedOrders.push(orderData)
+    // }
 }
 
 async function loadData() {
     Object.assign(draftOrders, await getAll('draftOrders'));
+    Object.assign(orders, await getAll('orders'));
     Object.assign(clients, await getAll('clients'));
     Object.assign(products, (await getAll('products')).filter(product => product.isActive));
     // products = products.filter(product => product.isActive);
@@ -134,8 +146,73 @@ function decreaseProductQuantity(product, draftOrder, productIndex) {
     else removeProductOfDraftOrder(draftOrder, productIndex);
 }
 
+import OrderCard from '../components/OrderCard.vue';
+
 </script>
 <template>
+    <h2>TOMAR PEDIDO</h2>
+    <select v-if="!defaultProduct && products?.length" class="mx-auto mt-4 text-center"
+        @change="selectDefaultProduct($event.target.value)">
+        <option value="">Selecciona un producto</option>
+        <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
+    </select>
+    <OrderCard :orders="draftOrders" :products="products" />
+
+    <!-- <h2>POR ENTREGAR ({{ confirmedOrders.length }})</h2> -->
+    <!-- <section>
+        <div v-for="confirmedOrder in confirmedOrders" :key="confirmedOrder.id">
+            <h3>{{ confirmedOrder.deliveryAddress }} {{ confirmedOrder.clientName }}</h3>
+            <div v-for="(product, productIndex) in confirmedOrder.products" :key="product.id + confirmedOrder.id">
+                <h4>{{ product.name }}</h4>
+            </div>
+        </div>
+    </section> -->
+    <!-- <section v-if="confirmedOrders?.length" class="space-y-4">
+        <div class="bg-white/20 p-2 rounded-lg" v-if="confirmedOrders?.length && products?.length"
+            v-for="confirmedOrder in confirmedOrders" :key="confirmedOrder.id">
+            <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ confirmedOrder.deliveryAddress }} {{
+                confirmedOrder.clientName
+            }}</span>
+            <div class="grid col-span-10" v-for="(product, productIndex) in confirmedOrder.products"
+                :key="product.id + confirmedOrder.id">
+                <div class="grid items-center grid-cols-10 col-span-10">
+                    <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"
+                        @change="updateProductOfDraftOrder(product, $event.target.value)" name="" id="">
+                        <option v-for="product in getAvailableProducts(confirmedOrder, product.id).value"
+                            :key="product.id + confirmedOrder.id" :value="product.id">{{
+                                product.name }}
+                        </option>
+                    </select>
+                    <span class="col-span-2 text-center">$ {{ product.price * product.quantity }}</span>
+                </div>
+                <div class="grid items-center grid-cols-10 col-span-10">
+                    <button class="col-span-2" type="button"
+                        @click="decreaseProductQuantity(product, confirmedOrder, productIndex)">-</button>
+                    <input class="quantityInput col-span-3 text-center" type="number" v-model="product.quantity" min="1"
+                        placeholder="1" required>
+                    <button class="col-span-2" type="button" @click="increaseProductQuantity(product)">+</button>
+                    <button class="col-span-3" type="button"
+                        @click="removeProductOfDraftOrder(confirmedOrder, productIndex)">🗑</button>
+                </div>
+            </div>
+            <button class="col-span-10" v-if="getAvailableProducts(confirmedOrder).value.length > 0" type="button"
+                @click="addProduct(confirmedOrder)">AGREGAR
+                PRODUCTO</button>
+            <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ confirmedOrder.totalAmount }}</h2>
+            <div class="grid grid-cols-3 col-span-10 gap-1 text-xs">
+                <button class="bg-gray-500" type="button"
+                    @click="setOrder(confirmedOrder, 'delivered')">CONFIRMAR</button>
+                <button type="button" @click="setOrder(confirmedOrder, 'skipped')">POSPONER</button>
+                <button type="button" @click="setOrder(confirmedOrder, 'declined')">CANCELAR</button>
+            </div>
+        </div>
+    </section> -->
+    <!-- 
+    <h2>POR COBRAR ({{orders.filter(order => order.status === 'delivered').length}})</h2>
+    <section></section>
+
+
+
     <h2>TOMAR PEDIDOS</h2>
     <select v-if="!defaultProduct && products?.length" class="mx-auto mt-4 text-center"
         @change="selectDefaultProduct($event.target.value)">
@@ -147,8 +224,8 @@ function decreaseProductQuantity(product, draftOrder, productIndex) {
     <h3 class="text-center italic p-2" v-if="products?.length === 0">No hay productos. Añade un producto primero.</h3>
 
     <section v-if="defaultProduct" class="space-y-4">
-        <div class="bg-white/20 p-2 rounded-lg" v-if="draftOrders?.length && products?.length"
-            v-for="draftOrder in draftOrders" :key="draftOrder.id">
+        <div @click="getTotal(draftOrder)" class="bg-white/20 p-2 rounded-lg"
+            v-if="draftOrders?.length && products?.length" v-for="draftOrder in draftOrders" :key="draftOrder.id">
             <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ draftOrder.deliveryAddress }} {{
                 draftOrder.clientName
                 }}</span>
@@ -177,7 +254,7 @@ function decreaseProductQuantity(product, draftOrder, productIndex) {
             <button class="col-span-10" v-if="getAvailableProducts(draftOrder).value.length > 0" type="button"
                 @click="addProduct(draftOrder)">AGREGAR
                 PRODUCTO</button>
-            <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ getTotal(draftOrder).value }}</h2>
+            <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ draftOrder.totalAmount }}</h2>
             <div class="grid grid-cols-3 col-span-10 gap-1 text-xs">
                 <button class="bg-gray-500" type="button" @click="setOrder(draftOrder, 'confirmed')">CONFIRMAR</button>
                 <button type="button" @click="setOrder(draftOrder, 'skipped')">POSPONER</button>
@@ -233,7 +310,7 @@ function decreaseProductQuantity(product, draftOrder, productIndex) {
             v-for="declinedOrder in declinedOrders" :key="declinedOrder.id">
             <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ declinedOrder.deliveryAddress }} {{
                 declinedOrder.clientName
-                }}</span>
+            }}</span>
             <div class="grid col-span-10" v-for="(product, productIndex) in declinedOrder.products"
                 :key="product.id + declinedOrder.id">
                 <div class="grid items-center grid-cols-10 col-span-10">
@@ -266,6 +343,6 @@ function decreaseProductQuantity(product, draftOrder, productIndex) {
                 <button type="button" @click="setOrder(declinedOrder, 'skipped')">POSPONER</button>
             </div>
         </div>
-    </section>
+    </section> -->
 
 </template>
