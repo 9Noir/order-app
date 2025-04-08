@@ -1,5 +1,5 @@
 <script setup>
-import {computed} from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
     orders: {
@@ -14,17 +14,20 @@ const props = defineProps({
 
 function getTotal(order) {
     order.totalAmount = order.products.reduce((acc, product) => acc + product.price * product.quantity, 0);
+    console.log(order.totalAmount)
     return order.totalAmount;
 }
 
-function updateProductOfDraftOrder(product, productId) {
-    const productToUpdate = products.find(p => p.id === productId);
+function updateProductOfDraftOrder(product, productId, order=null) {
+    console.log(product)
+    const productToUpdate = props.products.find(p => p.id === productId);
     if (productToUpdate) {
         product.id = productToUpdate.id
         product.name = productToUpdate.name;
         product.price = productToUpdate.price;
         product.quantity = 1;
     }
+    order&&getTotal(order)
 }
 
 
@@ -58,7 +61,9 @@ function addProduct(order) {
 }
 
 async function setOrder(orderToSave, status) {
+    console.log(orderToSave,status)
     orderToSave.status = status;
+    console.log(orderToSave)
     // const orderData = { ...toRaw(orderToSave), status };
 
 
@@ -90,11 +95,11 @@ async function setOrder(orderToSave, status) {
         :key="order.id">
         <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ order.deliveryAddress }} {{
             order.clientName
-            }}</span>
+        }}</span>
         <div class="grid col-span-10" v-for="(product, productIndex) in order.products" :key="product.id + order.id">
             <div class="grid items-center grid-cols-10 col-span-10">
                 <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"
-                    @change="updateProductOfDraftOrder(product, $event.target.value)" name="" id="">
+                    @change="updateProductOfDraftOrder(product, $event.target.value, order)" name="" id="">
                     <option v-for="product in getAvailableProducts(order, product.id).value"
                         :key="product.id + order.id" :value="product.id">{{
                             product.name }}
@@ -117,9 +122,9 @@ async function setOrder(orderToSave, status) {
             PRODUCTO</button>
         <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ order.totalAmount }}</h2>
         <div class="grid grid-cols-3 col-span-10 gap-1 text-xs">
-            <button class="bg-gray-500" type="button" @click="setOrder(draftOrder, 'confirmed')">CONFIRMAR</button>
-            <button type="button" @click="setOrder(draftOrder, 'skipped')">POSPONER</button>
-            <button type="button" @click="setOrder(draftOrder, 'declined')">CANCELAR</button>
+            <button class="bg-gray-500" type="button" @click="setOrder(order, 'confirmed')">CONFIRMAR</button>
+            <button type="button" @click="setOrder(order, 'skipped')">POSPONER</button>
+            <button type="button" @click="setOrder(order, 'declined')">CANCELAR</button>
         </div>
     </div>
 </template>

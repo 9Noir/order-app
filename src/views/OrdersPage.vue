@@ -22,13 +22,6 @@ const today = new Date().toISOString().slice(0, 10);
 var orderSequence = 1;
 
 
-function getTotal(order) {
-    console.log("total");
-    order.totalAmount = order.products.reduce((acc, product) => acc + product.price * product.quantity, 0);
-    return order.totalAmount;
-}
-
-
 const getAvailableProducts = (order, currentProductId = '') => computed(() => {
     const selectedIds = order.products?.filter(product => product.id !== currentProductId).map(product => product.id);
     return products.filter(product => !selectedIds?.includes(product.id));
@@ -52,6 +45,7 @@ async function createDraftOrders() {
             clientName: client.name,
             deliveryAddress: client.address,
             products: addProductToDraftOrder(defaultProduct.value, []),
+            totalAmount: defaultProduct.value.price
         });
     });
     orders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
@@ -112,39 +106,11 @@ function addProductToDraftOrder(product, products = []) {
     return products;
 }
 
-function addProduct(draftOrder) {
-    const availableProducts = getAvailableProducts(draftOrder).value;
-    if (availableProducts.length > 0) addProductToDraftOrder(availableProducts[0], draftOrder.products);
-}
-
-function removeProductOfDraftOrder(draftOrder, productIndex) {
-    draftOrder.products.splice(productIndex, 1);
-    getAvailableProducts(draftOrder);
-}
-
-function updateProductOfDraftOrder(product, productId) {
-    const productToUpdate = products.find(p => p.id === productId);
-    if (productToUpdate) {
-        product.id = productToUpdate.id
-        product.name = productToUpdate.name;
-        product.price = productToUpdate.price;
-        product.quantity = 1;
-    }
-}
-
-function increaseProductQuantity(product) {
-    product.quantity++;
-}
 
 // function quantityOnChange(product, draftOrder, productIndex) {
 //     if (product.quantity > 1) product.quantity--;
 //     else removeProductOfDraftOrder(draftOrder, productIndex);
 // }
-
-function decreaseProductQuantity(product, draftOrder, productIndex) {
-    if (product.quantity > 1) product.quantity--;
-    else removeProductOfDraftOrder(draftOrder, productIndex);
-}
 
 import OrderCard from '../components/OrderCard.vue';
 
@@ -157,6 +123,12 @@ import OrderCard from '../components/OrderCard.vue';
         <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
     </select>
     <OrderCard :orders="draftOrders" :products="products" />
+
+    <h2>POSPUESTOS</h2>
+    <OrderCard v-if="skippedOrders?.length" :orders="skippedOrders" :products="products" />
+
+    <h2>CANCELADOS</h2>
+    <OrderCard v-if="declinedOrders?.length" :orders="declinedOrders" :products="products" />
 
     <!-- <h2>POR ENTREGAR ({{ confirmedOrders.length }})</h2> -->
     <!-- <section>
