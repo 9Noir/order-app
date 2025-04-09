@@ -151,7 +151,7 @@ function addressToMall(address) {
                     <option value="locationType">Tipo de Ubi.</option>
                     <option value="createdAt">Fecha</option>
                 </select>
-                <button class="!flex-0 border-none" @click="sortDirection = -sortDirection">
+                <button class="!flex-0" @click="sortDirection = -sortDirection">
                     {{ sortDirection === 1 ? '▲' : '▼' }}
                 </button>
             </div>

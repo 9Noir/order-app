@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+// import { saveOrder } from '../services/databaseService';
 
 const props = defineProps({
     orders: {
@@ -18,7 +19,7 @@ function getTotal(order) {
     return order.totalAmount;
 }
 
-function updateProductOfDraftOrder(product, productId, order=null) {
+function updateProductOfDraftOrder(product, productId, order = null) {
     console.log(product)
     const productToUpdate = props.products.find(p => p.id === productId);
     if (productToUpdate) {
@@ -27,7 +28,7 @@ function updateProductOfDraftOrder(product, productId, order=null) {
         product.price = productToUpdate.price;
         product.quantity = 1;
     }
-    order&&getTotal(order)
+    order && getTotal(order)
 }
 
 
@@ -61,31 +62,7 @@ function addProduct(order) {
 }
 
 async function setOrder(orderToSave, status) {
-    console.log(orderToSave,status)
     orderToSave.status = status;
-    console.log(orderToSave)
-    // const orderData = { ...toRaw(orderToSave), status };
-
-
-    // if (orderToSave.status === 'pending') {
-    //     removeFromArray(draftOrders, orderToSave);
-    // }
-    // } else if (orderToSave.status === 'skipped') {
-    //     removeFromArray(skippedOrders, orderToSave);
-    // } else if (orderToSave.status === 'declined') {
-    //     removeFromArray(declinedOrders, orderToSave);
-    // }
-
-    // if (status === 'confirmed') {
-    //     //Ordenes confirmadas, se eliminan de los borradores
-    //     await saveObject(orderData, 'orders');
-    // } else if (status === 'skipped') {
-    //     //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
-    //     skippedOrders.push(orderData)
-    // } else if (status === 'declined') {
-    //     //Ordenes cambiadas de estado a skip o decline, se eliminan de los borradores
-    //     declinedOrders.push(orderData)
-    // }
 }
 
 
@@ -100,9 +77,10 @@ async function setOrder(orderToSave, status) {
             <div class="grid items-center grid-cols-10 col-span-10">
                 <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"
                     @change="updateProductOfDraftOrder(product, $event.target.value, order)" name="" id="">
-                    <option v-for="product in getAvailableProducts(order, product.id).value"
-                        :key="product.id + order.id" :value="product.id">{{
-                            product.name }}
+                    <option v-for="productAvailable in getAvailableProducts(order, product.id).value"
+                        :key="productAvailable.id + order.id" :value="productAvailable.id"
+                        :selected="productAvailable.id === product.id">{{
+                            productAvailable.name }}
                     </option>
                 </select>
                 <span class="col-span-2 text-center">$ {{ product.price * product.quantity }}</span>
@@ -121,10 +99,13 @@ async function setOrder(orderToSave, status) {
             @click="addProduct(order)">AGREGAR
             PRODUCTO</button>
         <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ order.totalAmount }}</h2>
-        <div class="grid grid-cols-3 col-span-10 gap-1 text-xs">
+        <div :class="order.status === 'pending' ? 'grid grid-cols-3' : 'grid grid-cols-2'"
+            class="col-span-10 gap-1 text-xs">
             <button class="bg-gray-500" type="button" @click="setOrder(order, 'confirmed')">CONFIRMAR</button>
-            <button type="button" @click="setOrder(order, 'skipped')">POSPONER</button>
-            <button type="button" @click="setOrder(order, 'declined')">CANCELAR</button>
+            <button v-if="order.status !== 'skipped'" type="button"
+                @click="setOrder(order, 'skipped')">POSPONER</button>
+            <button v-if="order.status !== 'declined'" type="button"
+                @click="setOrder(order, 'declined')">CANCELAR</button>
         </div>
     </div>
 </template>
