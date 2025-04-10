@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, onMounted, computed, toRaw } from 'vue';
-import { getAll } from '../services/databaseService';
+import { getAll, generateDailyDraftOrders } from '../services/databaseService';
 import OrderCard from '../components/OrderCard.vue';
 
 const defaultProduct = ref(null);
@@ -19,27 +19,15 @@ const today = new Date().toISOString().slice(0, 10);
 var orderSequence = 1;
 
 onMounted(async () => {
-    await loadData();
+    await loadData()
+    await generateAndSetDraftOrders();
 });
 
-function selectDefaultProduct(productId) {
-    console.log(products.find(product => product.id === productId))
-    defaultProduct.value = products.find(product => product.id === productId);
-    createDraftOrders();
-}
-
-async function createDraftOrders() {
-    orders.length = 0;
-    products?.length && clients.forEach(client => {
-        orders.push({
-            status: 'pending',
-            clientId: client.id,
-            clientName: client.name,
-            deliveryAddress: client.address,
-            products: addProductToDraftOrder(defaultProduct.value, []),
-            totalAmount: defaultProduct.value.price
-        });
-    });
+async function generateAndSetDraftOrders() {
+    const drafts = await generateDailyDraftOrders(clients, products);
+    orders.length = 0
+    drafts.forEach((draft) => orders.push(draft))
+    console.log(orders)
     orders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
 }
 
@@ -66,6 +54,10 @@ function addProductToDraftOrder(product, products = []) {
     return products;
 }
 
+async function generateDrafts() {
+    await generateAndSetDraftOrders();
+}
+
 </script>
 <template>
     <div class="grid grid-cols-2 text-center mt-4 text-xs">
@@ -83,11 +75,8 @@ function addProductToDraftOrder(product, products = []) {
 
     <section v-else class="grid">
         <h2>CONSULTAR ({{ draftOrders?.length }})</h2>
-        <select v-if="!defaultProduct && products?.length" class="mx-auto mt-4 text-center"
-            @change="selectDefaultProduct($event.target.value)">
-            <option value="">Selecciona un producto</option>
-            <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
-        </select>
+        <button class="bg-gray-300" @click="generateDrafts">Generar Borradores</button>
+
         <OrderCard :orders="draftOrders" :products="products" />
 
         <h2>POSPUESTOS ({{ skippedOrders?.length }})</h2>
