@@ -25,7 +25,6 @@ function normalizeObject(objectData, storeName) {
     }
 }
 
-
 async function getStore(storeName, mode = 'readonly') {
     const db = await dbPromise();
     const tx = await db.transaction(storeName, mode);
@@ -48,6 +47,15 @@ export async function addObject(objectData, storeName) {
     return objectToAdd;
 }
 
+export async function addAllObjects(objectsData, storeName) {
+    const { store, tx } = await getStore(storeName, 'readwrite');
+    objectsData.forEach(async (object) => {
+        await store.add(object);
+    });
+    await tx.done;
+    return objectsData;
+}
+
 export async function getAll(storeName) {
     const { store } = await getStore(storeName);
     return await store.getAll();
@@ -64,6 +72,12 @@ export async function updateObject(objectData, storeName) {
 export async function deleteObject(objectId, storeName) {
     const { store, tx } = await getStore(storeName, 'readwrite');
     await store.delete(objectId);
+    await tx.done;
+}
+
+export async function deleteAllObjects(storeName) {
+    const { store, tx } = await getStore(storeName, 'readwrite');
+    await store.clear();
     await tx.done;
 }
 

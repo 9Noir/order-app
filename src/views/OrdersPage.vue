@@ -1,11 +1,12 @@
 <script setup>
 import { ref, reactive, onMounted, computed, toRaw } from 'vue';
-import { getAll } from '../services/databaseService';
+import { getAll, addAllObjects, deleteAllObjects } from '../services/databaseService';
 import OrderCard from '../components/OrderCard.vue';
 
 const defaultProduct = ref(null);
 const orders = reactive([]);
-const draftOrders = computed(() => orders.filter(order => order.status === 'pending'));
+// const draftOrders = computed(() => orders.filter(order => order.status === 'pending'));
+const draftOrders = reactive([]);
 const skippedOrders = computed(() => orders.filter(order => order.status === 'skipped'));
 const declinedOrders = computed(() => orders.filter(order => order.status === 'declined'));
 const confirmedOrders = computed(() => orders.filter(order => order.status === 'confirmed'));
@@ -20,27 +21,37 @@ var orderSequence = 1;
 
 onMounted(async () => {
     await loadData();
+    if (draftOrders.length && !areDraftOrdersForToday()) {
+        createDraftOrders();
+    }
 });
 
 function selectDefaultProduct(productId) {
-    console.log(products.find(product => product.id === productId))
     defaultProduct.value = products.find(product => product.id === productId);
     createDraftOrders();
 }
 
+function areDraftOrdersForToday() {
+    return draftOrders.some(order => order.draftDate.slice(0, 10) === today);
+}
+
 async function createDraftOrders() {
-    orders.length = 0;
+    await deleteAllObjects('draftOrders');
+    draftOrders.length = 0;
     products?.length && clients.forEach(client => {
-        orders.push({
+        draftOrders.push({
             status: 'pending',
             clientId: client.id,
             clientName: client.name,
             deliveryAddress: client.address,
             products: addProductToDraftOrder(defaultProduct.value, []),
-            totalAmount: defaultProduct.value.price
+            totalAmount: defaultProduct.value.price,
+            draftDate: new Date()
         });
     });
-    orders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
+    draftOrders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
+    console.log(toRaw(draftOrders))
+    await addAllObjects(toRaw(draftOrders), 'draftOrders');
 }
 
 function generateOrderNumber(prefix = 'ORD') {
@@ -82,6 +93,7 @@ function addProductToDraftOrder(product, products = []) {
     </section>
 
     <section v-else class="grid">
+        <button @click="deleteAllObjects('draftOrders')">Crear encargos</button>
         <h2>CONSULTAR ({{ draftOrders?.length }})</h2>
         <select v-if="!defaultProduct && products?.length" class="mx-auto mt-4 text-center"
             @change="selectDefaultProduct($event.target.value)">
