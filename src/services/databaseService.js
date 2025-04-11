@@ -81,6 +81,21 @@ export async function deleteAllObjects(storeName) {
     await tx.done;
 }
 
+export async function addDraftOrder(draftOrder) {
+    const { store, tx } = await getStore('draftOrders', 'readwrite');
+    await store.add(draftOrder);
+    await tx.done;
+    return draftOrder;
+}
+
+export async function updateDraftOrder(draftOrder) {
+    const { store, tx } = await getStore('draftOrders', 'readwrite');
+    await store.put(draftOrder);
+    await tx.done;
+    return draftOrder;
+}
+
+
 export default {
     getAll,
     addObject,

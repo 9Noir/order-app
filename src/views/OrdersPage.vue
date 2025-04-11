@@ -5,10 +5,10 @@ import OrderCard from '../components/OrderCard.vue';
 
 const defaultProduct = ref(null);
 const orders = reactive([]);
-// const draftOrders = computed(() => orders.filter(order => order.status === 'pending'));
 const draftOrders = reactive([]);
-const skippedOrders = computed(() => orders.filter(order => order.status === 'skipped'));
-const declinedOrders = computed(() => orders.filter(order => order.status === 'declined'));
+const pendingOrders = computed(() => draftOrders.filter(order => order.status === 'pending'));
+const skippedOrders = computed(() => draftOrders.filter(order => order.status === 'skipped'));
+const declinedOrders = computed(() => draftOrders.filter(order => order.status === 'declined'));
 const confirmedOrders = computed(() => orders.filter(order => order.status === 'confirmed'));
 const deliveredOrders = computed(() => orders.filter(order => order.status === 'delivered'));
 const paidOrders = computed(() => orders.filter(order => order.status === 'paid'));
@@ -32,7 +32,7 @@ function selectDefaultProduct(productId) {
 }
 
 function areDraftOrdersForToday() {
-    return draftOrders.some(order => order.draftDate.slice(0, 10) === today);
+    return draftOrders.some(order => order.draftDate.toISOString().slice(0, 10) === today);
 }
 
 async function createDraftOrders() {
@@ -50,7 +50,7 @@ async function createDraftOrders() {
         });
     });
     draftOrders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
-    console.log(toRaw(draftOrders))
+    // console.log(toRaw(draftOrders))
     await addAllObjects(toRaw(draftOrders), 'draftOrders');
 }
 
@@ -87,25 +87,29 @@ function addProductToDraftOrder(product, products = []) {
     </div>
     <section v-if="viewConfirmedOrders">
         <h2>ENTREGAR ({{ confirmedOrders?.length }})</h2>
-        <OrderCard :orders="confirmedOrders" :products="products" />
+        <OrderCard :draftOrders="[]" :confirmedOrders="confirmedOrders" :products="products" />
         <h2>COBRAR ({{ deliveredOrders?.length }})</h2>
-        <OrderCard :orders="deliveredOrders" :products="products" />
+        <OrderCard :draftOrders="[]" :confirmedOrders="deliveredOrders" :products="products" />
     </section>
 
     <section v-else class="grid">
         <button @click="deleteAllObjects('draftOrders')">Crear encargos</button>
-        <h2>CONSULTAR ({{ draftOrders?.length }})</h2>
+
+        <h2>CONSULTAR ({{ pendingOrders?.length }})</h2>
         <select v-if="!defaultProduct && products?.length" class="mx-auto mt-4 text-center"
             @change="selectDefaultProduct($event.target.value)">
             <option value="">Selecciona un producto</option>
             <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
         </select>
-        <OrderCard :orders="draftOrders" :products="products" />
+        <OrderCard v-if="pendingOrders?.length" :draftOrders="pendingOrders" :products="products"
+            :confirmedOrders="confirmedOrders" />
 
         <h2>POSPUESTOS ({{ skippedOrders?.length }})</h2>
-        <OrderCard :orders="skippedOrders" :products="products" />
+        <OrderCard v-if="skippedOrders?.length" :draftOrders="skippedOrders" :products="products"
+            :confirmedOrders="confirmedOrders" />
 
         <h2>CANCELADOS ({{ declinedOrders?.length }})</h2>
-        <OrderCard :orders="declinedOrders" :products="products" />
+        <OrderCard v-if="declinedOrders?.length" :draftOrders="declinedOrders" :products="products"
+            :confirmedOrders="confirmedOrders" />
     </section>
 </template>

@@ -1,15 +1,19 @@
 <script setup>
-import { computed } from 'vue';
-// import { saveOrder } from '../services/databaseService';
+import { computed, toRaw } from 'vue';
+import { saveObject, updateDraftOrder, deleteObject } from '../services/databaseService';
 
 const props = defineProps({
-    orders: {
+    draftOrders: {
         type: Array,
-        required: true
+        required: false
     },
     products: {
         type: Array,
         required: true
+    },
+    confirmedOrders: {
+        type: Array,
+        required: false
     }
 })
 
@@ -61,18 +65,44 @@ function addProduct(order) {
     if (availableProducts.length > 0) addProductToDraftOrder(availableProducts[0], order.products);
 }
 
-async function setOrder(orderToSave, status) {
-    orderToSave.status = status;
+function addProductToDraftOrder(product, products = []) {
+    const newProductToAdd = {
+        id: product.id,
+        name: product.name,
+        quantity: 1,
+        price: product.price
+    };
+    products.push(newProductToAdd);
+    return products;
 }
 
+async function updateDraft(draftOrder, status) {
+    draftOrder.status = status;
+    await updateDraftOrder(toRaw(draftOrder));
+}
 
+async function setOrder(orderToSave, status) {
+    orderToSave.status = status;
+    await saveObject(toRaw(orderToSave), 'orders')
+
+    if (orderToSave.status === 'confirmed') {
+        props.confirmedOrders.push(orderToSave)
+        await deleteObject(orderToSave.clientId, 'draftOrders')
+        props.draftOrders.splice(props.draftOrders.indexOf(orderToSave), 1);
+    }
+
+    const orders = computed(() => {
+        console.log(Boolean(props.draftOrders?.length))
+        return props.draftOrders?.length ? props.draftOrders : props.confirmedOrders
+    })
+}
 </script>
 <template>
-    <div @click="getTotal(order)" class="bg-white/20 p-2 rounded-lg" v-if="orders?.length" v-for="order in props.orders"
+    <div @click="getTotal(order)" class="bg-white/20 p-2 rounded-lg" v-if="orders?.length" v-for="order in orders"
         :key="order.id">
         <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ order.deliveryAddress }} {{
             order.clientName
-        }}</span>
+            }}</span>
         <div class="grid col-span-10" v-for="(product, productIndex) in order.products" :key="product.id + order.id">
             <div class="grid items-center grid-cols-10 col-span-10">
                 <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"
@@ -99,13 +129,34 @@ async function setOrder(orderToSave, status) {
             @click="addProduct(order)">AGREGAR
             PRODUCTO</button>
         <h2 class="!mt-0 py-2 col-span-10">TOTAL: $ {{ order.totalAmount }}</h2>
-        <div :class="order.status === 'pending' ? 'grid grid-cols-3' : 'grid grid-cols-2'"
+        <div v-if="draftOrders?.length" :class="order.status === 'pending' ? 'grid grid-cols-3' : 'grid grid-cols-2'"
             class="col-span-10 gap-1 text-xs">
             <button class="bg-gray-500" type="button" @click="setOrder(order, 'confirmed')">CONFIRMAR</button>
             <button v-if="order.status !== 'skipped'" type="button"
-                @click="setOrder(order, 'skipped')">POSPONER</button>
+                @click="updateDraft(order, 'skipped')">POSPONER</button>
             <button v-if="order.status !== 'declined'" type="button"
-                @click="setOrder(order, 'declined')">CANCELAR</button>
+                @click="updateDraft(order, 'declined')">CANCELAR</button>
+        </div>
+
+        <div class="grid grid-cols-3 col-span-10" v-if="order.status === 'confirmed'">
+            <button @click="setOrder(order, 'delivered')">ENTREGAR</button>
+            <button @click="setOrder(order, 'paid')">ENTREGAR Y COBRAR</button>
+            <button @click="setOrder(order, 'canceled')">CANCELAR</button>
+            <select name="paymentMethod" id="paymentMethod">
+                <option value="cash">EFECTIVO</option>
+                <option value="transfer">TRANSFERENCIA</option>
+                <option value="other">OTRO</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-2 col-span-10" v-if="order.status === 'delivered'">
+            <button @click="setOrder(order, 'paid')">COBRAR</button>
+            <select name="paymentMethod" id="paymentMethod">
+                <option value="cash">EFECTIVO</option>
+                <option value="transfer">TRANSFERENCIA</option>
+                <option value="other">OTRO</option>
+            </select>
         </div>
     </div>
+
+
 </template>
