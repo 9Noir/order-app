@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed, toRaw } from 'vue';
 import { getAll, addAllObjects, deleteAllObjects } from '../services/databaseService';
 import OrderCard from '../components/OrderCard.vue';
+import ConfirmedOrderCard from '../components/ConfirmedOrderCard.vue';
 
 const defaultProduct = ref(null);
 const orders = reactive([]);
@@ -11,7 +12,7 @@ const skippedOrders = computed(() => draftOrders.filter(order => order.status ==
 const declinedOrders = computed(() => draftOrders.filter(order => order.status === 'declined'));
 const confirmedOrders = computed(() => orders.filter(order => order.status === 'confirmed'));
 const deliveredOrders = computed(() => orders.filter(order => order.status === 'delivered'));
-const paidOrders = computed(() => orders.filter(order => order.status === 'paid'));
+const finishedOrders = computed(() => orders.filter(order => order.status === 'canceled' || order.status === 'paid'));
 const viewConfirmedOrders = ref(true);
 
 const clients = reactive([]);
@@ -85,16 +86,17 @@ function addProductToDraftOrder(product, products = []) {
         <button @click="viewConfirmedOrders = false"
             :class="{ 'bg-gray-200 text-black': !viewConfirmedOrders }">ENCARGAR ({{ draftOrders?.length }})</button>
     </div>
-    <section v-if="viewConfirmedOrders">
+    <section class="grid gap-2" v-if="viewConfirmedOrders">
         <h2>ENTREGAR ({{ confirmedOrders?.length }})</h2>
-        <OrderCard :draftOrders="[]" :confirmedOrders="confirmedOrders" :products="products" />
+        <ConfirmedOrderCard class="bg-amber-500/50" v-for="order in confirmedOrders" :key="order.id" :order="order" />
         <h2>COBRAR ({{ deliveredOrders?.length }})</h2>
-        <OrderCard :draftOrders="[]" :confirmedOrders="deliveredOrders" :products="products" />
+        <ConfirmedOrderCard class="bg-green-500/50" v-for="order in deliveredOrders" :key="order.id" :order="order" />
+        <h2>FINALIZADOS ({{ finishedOrders?.length }})</h2>
+        <FinishedOrderCard class="bg-blue-500/50" v-for="order in finishedOrders" :key="order.id" :order="order" />
     </section>
 
     <section v-else class="grid">
-        <button @click="deleteAllObjects('draftOrders')">Crear encargos</button>
-
+        <!-- <button @click="deleteAllObjects('draftOrders')">Crear encargos</button> -->
         <h2>CONSULTAR ({{ pendingOrders?.length }})</h2>
         <select v-if="!defaultProduct && products?.length" class="mx-auto mt-4 text-center"
             @change="selectDefaultProduct($event.target.value)">

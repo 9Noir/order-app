@@ -68,7 +68,7 @@ async function loadProducts() {
     <h2>PRODUCTOS</h2>
     <h3 v-if="!sortedProducts?.length">No hay productos activos</h3>
     <section v-if="sortedProducts?.length">
-        <div>
+        <div class="py-2 text-gray-50/50 text-sm">
             <span class="col-span-2">$</span>
             <span class="col-span-6">Nombre</span>
             <span class="col-span-2 text-center">Acciones</span>
@@ -88,7 +88,7 @@ async function loadProducts() {
     <h2>INACTIVOS</h2>
     <h3 v-if="!inactiveProducts?.length">No hay productos inactivos</h3>
     <section v-if="inactiveProducts?.length">
-        <div>
+        <div class="py-2 text-gray-50/50 text-sm">
             <span class="col-span-2">$</span>
             <span class="col-span-4">Nombre</span>
             <span class="col-span-2 text-center">Acciones</span>

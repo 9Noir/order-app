@@ -157,7 +157,7 @@ function addressToMall(address) {
             </div>
 
             <section>
-                <div>
+                <div class="py-2 text-gray-50/50 text-sm">
                     <span class="col-span-2">Ubicacion</span>
                     <span class="col-span-6">Nombre</span>
                     <span class="col-span-2 text-center">Acciones</span>

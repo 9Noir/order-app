@@ -43,10 +43,10 @@ input {
     @apply text-gray-50 bg-black border rounded p-2 border-gray-50/40
 }
 
-section>div:nth-of-type(1) {
-    @apply py-2 text-gray-50/50 text-sm
-}
-
 section>div {
     @apply grid grid-cols-10 items-center border-t-gray-500 border-t-2
+}
+
+.confirmed-order-card {
+    @apply grid !grid-cols-2 p-2 rounded-lg !border-t-0
 }

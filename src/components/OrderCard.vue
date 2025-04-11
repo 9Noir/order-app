@@ -90,19 +90,19 @@ async function setOrder(orderToSave, status) {
         await deleteObject(orderToSave.clientId, 'draftOrders')
         props.draftOrders.splice(props.draftOrders.indexOf(orderToSave), 1);
     }
-
-    const orders = computed(() => {
-        console.log(Boolean(props.draftOrders?.length))
-        return props.draftOrders?.length ? props.draftOrders : props.confirmedOrders
-    })
 }
+
+const orders = computed(() => {
+    console.log(Boolean(props.draftOrders?.length))
+    return props.draftOrders?.length ? props.draftOrders : props.confirmedOrders
+})
 </script>
 <template>
     <div @click="getTotal(order)" class="bg-white/20 p-2 rounded-lg" v-if="orders?.length" v-for="order in orders"
         :key="order.id">
         <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ order.deliveryAddress }} {{
             order.clientName
-            }}</span>
+        }}</span>
         <div class="grid col-span-10" v-for="(product, productIndex) in order.products" :key="product.id + order.id">
             <div class="grid items-center grid-cols-10 col-span-10">
                 <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"
@@ -138,7 +138,7 @@ async function setOrder(orderToSave, status) {
                 @click="updateDraft(order, 'declined')">CANCELAR</button>
         </div>
 
-        <div class="grid grid-cols-3 col-span-10" v-if="order.status === 'confirmed'">
+        <div class="grid grid-cols-3 col-span-10 !text-xs" v-if="order.status === 'confirmed'">
             <button @click="setOrder(order, 'delivered')">ENTREGAR</button>
             <button @click="setOrder(order, 'paid')">ENTREGAR Y COBRAR</button>
             <button @click="setOrder(order, 'canceled')">CANCELAR</button>
@@ -148,7 +148,7 @@ async function setOrder(orderToSave, status) {
                 <option value="other">OTRO</option>
             </select>
         </div>
-        <div class="grid grid-cols-2 col-span-10" v-if="order.status === 'delivered'">
+        <div class="grid grid-cols-2 col-span-10 !text-xs" v-if="order.status === 'delivered'">
             <button @click="setOrder(order, 'paid')">COBRAR</button>
             <select name="paymentMethod" id="paymentMethod">
                 <option value="cash">EFECTIVO</option>
