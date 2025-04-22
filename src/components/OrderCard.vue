@@ -1,6 +1,6 @@
 <script setup>
 import { computed, toRaw } from 'vue';
-import { saveObject, updateDraftOrder, deleteObject } from '../services/databaseService';
+import { saveObject, updateDraftOrder, deleteObject, generateOrderNumber } from '../services/databaseService';
 
 const props = defineProps({
     draftOrders: {
@@ -83,6 +83,7 @@ async function updateDraft(draftOrder, status) {
 
 async function setOrder(orderToSave, status) {
     orderToSave.status = status;
+    orderToSave.orderNumber = await generateOrderNumber();
     await saveObject(toRaw(orderToSave), 'orders')
 
     if (orderToSave.status === 'confirmed') {
@@ -102,7 +103,7 @@ const orders = computed(() => {
         :key="order.id">
         <span class="col-span-10 capitalize font-bold bg-gray-700 p-2">{{ order.deliveryAddress }} {{
             order.clientName
-        }}</span>
+            }}</span>
         <div class="grid col-span-10" v-for="(product, productIndex) in order.products" :key="product.id + order.id">
             <div class="grid items-center grid-cols-10 col-span-10">
                 <select v-if="product.id" class="text-center py-2 uppercase truncate col-span-8"

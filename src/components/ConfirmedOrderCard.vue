@@ -39,9 +39,9 @@ async function setOrder(orderToSave, status) {
             </div>
         </div>
         <div class="grid !grid-cols-3 col-span-3 text-center text-xs">
-            <button v-if="props.order.status === 'confirmed'"
+            <button class="bg-white/50" v-if="props.order.status === 'confirmed'"
                 @click="setOrder(props.order, 'delivered')">ENTREGAR</button>
-            <button :class="props.order.status === 'delivered' && 'col-span-2'"
+            <button class="col-span-1" :class="props.order.status === 'delivered' && 'col-span-2'"
                 @click="setOrder(props.order, 'paid')">COBRAR</button>
             <span class="text-lg font-bold">${{ props.order.totalAmount }}</span>
         </div>

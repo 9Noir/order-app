@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, computed, toRaw } from 'vue';
 import { getAll, addAllObjects, deleteAllObjects } from '../services/databaseService';
 import OrderCard from '../components/OrderCard.vue';
 import ConfirmedOrderCard from '../components/ConfirmedOrderCard.vue';
+import FinishedOrderCard from '../components/FinishedOrderCard.vue';
 
 const defaultProduct = ref(null);
 const orders = reactive([]);
@@ -18,7 +19,6 @@ const viewConfirmedOrders = ref(true);
 const clients = reactive([]);
 const products = reactive([]);
 const today = new Date().toISOString().slice(0, 10);
-var orderSequence = 1;
 
 onMounted(async () => {
     await loadData();
@@ -53,11 +53,6 @@ async function createDraftOrders() {
     draftOrders.sort((a, b) => a.deliveryAddress.localeCompare(b.deliveryAddress));
     // console.log(toRaw(draftOrders))
     await addAllObjects(toRaw(draftOrders), 'draftOrders');
-}
-
-function generateOrderNumber(prefix = 'ORD') {
-    orderSequence++;
-    return prefix + '-' + today + '-' + orderSequence;
 }
 
 async function loadData() {

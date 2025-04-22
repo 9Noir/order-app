@@ -1,8 +1,23 @@
 import dbPromise from './db'; // Your existing db connection setup
 import { v4 as uuidv4 } from 'uuid';
 
+export async function generateOrderNumber(prefix = 'ORD') {
+    const { store, tx } = await getStore('appMetadata', 'readwrite');
+    const secuenceData = await store.get('orderSequence');
+    const today = new Date().toISOString().slice(0, 10);
+    let nextNumber = 1
 
-function normalizeObject(objectData, storeName) {
+    if (secuenceData && secuenceData.lastDate === today) {
+        nextNumber = secuenceData.lastNumber + 1;
+    }
+
+    await store.put({ id: 'orderSequence', lastDate: today, lastNumber: nextNumber });
+    await tx.done;
+    console.log(prefix + '-' + today.replace(/-/g, '') + '-' + String(nextNumber).padStart(4, '0'));
+    return prefix + '-' + today.replace(/-/g, '') + '-' + String(nextNumber).padStart(4, '0');
+}
+
+async function normalizeObject(objectData, storeName) {
     const newObjectData = { ...objectData, id: objectData.id || uuidv4(), createdAt: objectData.createdAt || new Date(), updatedAt: new Date() };
 
     if (storeName === 'clients') {
@@ -20,7 +35,7 @@ function normalizeObject(objectData, storeName) {
     if (storeName === 'orders') {
         return {
             ...newObjectData,
-            status: newObjectData.status || 'confirmed',
+            status: newObjectData.status || 'confirmed'
         }
     }
 }
@@ -41,7 +56,8 @@ export async function saveObject(objectData, storeName) {
 
 export async function addObject(objectData, storeName) {
     const { store, tx } = await getStore(storeName, 'readwrite');
-    const objectToAdd = normalizeObject(objectData, storeName);
+    const objectToAdd = await normalizeObject(objectData, storeName);
+    console.log(objectToAdd);
     await store.add(objectToAdd);
     await tx.done;
     return objectToAdd;
@@ -63,7 +79,7 @@ export async function getAll(storeName) {
 
 export async function updateObject(objectData, storeName) {
     const { store, tx } = await getStore(storeName, 'readwrite');
-    const objectToUpdate = normalizeObject(objectData, storeName);
+    const objectToUpdate = await normalizeObject(objectData, storeName);
     await store.put(objectToUpdate);
     await tx.done;
     return objectToUpdate;
